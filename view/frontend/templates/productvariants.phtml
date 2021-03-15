@@ -1,0 +1,173 @@
+<?php
+/**
+ * @var $block \Genaker\ProductVariants\Block\ProductVariants
+ */
+
+$start = microtime(TRUE);
+$swatchers = $block->getProductSwatchersVariants();
+$currentSku = $block->getCurrentProductSKU();
+
+?>
+
+<style>
+.swatch-option.text {
+    width: 60px;
+    height: 30px;
+}
+
+.swatch-option {
+    overflow: inherit;
+    height: 50px;
+    width: 50px;
+}
+
+.swatch-option.selected {
+
+    outline: 4px solid #e5ac11;
+}
+
+/* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+    /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.tooltip div.tooltip-block {
+    font-size: 11px;
+    display: none;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    --padding: 5px 0;
+    border-radius: 6px;
+    top: -100px;
+    left: -30px;
+    width: 100px;
+    /* Position the tooltip text - see examples below! */
+    /*--position: absolute;*/
+    position: absolute;
+    z-index: 999;
+    opacity: 1;
+}
+
+.tooltip img.tooltip-image {
+    display: block;
+    width: auto;
+    height: auto;
+    z-index: 999;
+    opacity: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover div.tooltip-block {
+    display: block;
+}
+
+.swatch-option.text {
+    background: none;
+}
+</style>
+
+
+<div class="magento-product-variant">
+    <div class="product-options-wrapper" id="product-options-wrapper">
+        <div class="fieldset" tabindex="0">
+            <div class="swatch-opt" data-role="swatch-options">
+                <?php
+                foreach ($swatchers as $swatch):
+
+                    if ($swatch == false) continue;
+
+                    if (count($swatch) === 2 &&
+                        $swatch[$currentSku]['attribute_value'] == false && !$block->isSwatch($swatch['data']['attribute_code']))
+                        continue;
+                    ?>
+                <div class="swatch-attribute <?php echo $swatch['data']['attribute_code']; ?>" attribute-code="color"
+                    attribute-id="<?php echo $swatch['data']['attribute_id']; ?>">
+
+                    <span class="swatch-attribute-label"><?= $swatch['data']['label'] ?></span>
+
+                    <div class="swatch-attribute-options clearfix">
+                        <?php foreach ($swatch as $sku => $attribute):
+                                echo "<!-- $sku -->";
+                               // var_dump($attribute);
+
+                                if ($sku == 'data') continue;
+                                $currentProduct = '';
+                                if ($currentSku == $sku)
+                                    $currentProduct = 'selected';
+                                $color = false;
+                                if ($block->isSwatch($swatch['data']['attribute_code']) && (isset($attribute['value']) || isset($attribute['image']))/*'color'*/) {
+                    //var_dump($attribute);  die("666");
+                                    // aditional class for swatch div 
+                                    $option = 'swatch';
+                                    $color = true;
+                                } else {
+                                    $option = 'text';
+                                }
+                                ?>
+
+                        <a href="<?= $attribute['product_url_key'] ?>">
+
+                            <div class="swatch-option <?= $option . ' ' . $currentProduct ?> tooltip" option-type="1"
+                                option-id="50" option-label="<?= $attribute['attribute_value'] ?>" <?php if (!isset($attribute['value'])) {
+                                            $attribute['value'] = "";
+                                            if (isset($attribute['image'])){
+                                                $attribute['value'] = $attribute['image'];
+                                            }
+                                        }
+
+                                        $swatchUrl = '';
+                                        //$swatchUrl = '/pub/media/attribute/swatch/';
+                                        if(!strpos($attribute['value'], '://'))
+                                        $swatchUrl = 'https://www.tilebar.com/media/catalog/product/';
+                                        ?> data-option-tooltip-thumb=""
+                                data-option-label="<?= $attribute['option_id'] ?>"
+                                data-option-tooltip-value="<?= $swatchUrl . $attribute['value'] ?>" <?php if ($color) {
+                                            // $attribute['image'] - product image swatch 
+                                            if ((isset($attribute['type']) && $attribute['type'] == 2) || isset($attribute['image'])) {
+                                                $htmlValue = 'url(' . $swatchUrl . $attribute['value'] . ') ';
+                                            } else {
+                                                $htmlValue = $attribute['value'];
+                                            }
+
+                                            //background: url(http://stage.dickies.com/media/attribute/swatch/q/u/quadratec-tecstyle-seat-covers-jk-wrangler-2-door-14167.22xx-tan-swatch.jpg);
+                                            ?>
+                                style="background: <?= $htmlValue ?> no-repeat center; background-size: cover;"
+                                <?php } ?>>
+                                <?php
+                                        if ($block->isSwatch($swatch['data']['attribute_code'])){ 
+                                    ?>
+
+                                <div class="tooltip-block">
+                                    <img class="tooltip-image" src="<?= $swatchUrl . $attribute['value'] ?>">
+                                    <span class="tooltip-text"><?= $attribute['option_id'] ?></span>
+                                    <!-- <div class="tooltip-product name"> <?= $attribute['product_title'] ?></div> -->
+                                </div>
+                                <?php
+                                        }
+                                        if (!$color)
+                                            echo $attribute['option_text'];
+                                        ?>
+                            </div>
+                        </a>
+
+                        <?php //var_dump($attribute);
+
+                            endforeach; ?>
+                    </div>
+                </div>
+                <div style="clear: both"></div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php 
+ $end = microtime(TRUE);
+ //echo "The code took " . ($end - $start) . " seconds to complete.";
+?>

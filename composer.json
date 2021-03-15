@@ -1,0 +1,21 @@
+{
+    "name": "Jsproducts/module-productvariants",
+    "description": "Custom product variants - Color - Size",
+    "license": "proprietary",
+    "authors": [
+        {
+            "email": "egorsytikov@gmail.com",
+            "name": "EgorShytikov"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Jsproducts\\ProductVariants\\": ""
+        },
+        "files": [
+            "registration.php"
+        ]
+    }
+}
