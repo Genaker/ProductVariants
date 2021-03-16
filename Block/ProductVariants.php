@@ -19,7 +19,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         //['tiles_size_variants' => 'tiles_size']
     ];
 
-    // different logic based on configuration by default it is text swatch... 
+    // different logic based on configuration by default it is text swatch...
     public $varidationAttributesConfig = [
         'spec_design' => 'swatch',
     ];
@@ -107,11 +107,15 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         foreach ($productsObj as $pr) {
             $foundSKUs[$pr->getsku()] = 1;
         }
+
+        $k = 0;
         foreach ($products as $pr) {
             //echo $pr . "--";
             if (!isset($foundSKUs[$pr])) {
+                unset($k);
                 echo "\n" . '<!-- SKU ' . $pr . ' not found check input data -->' . "\n";
             }
+            $k++;
         }
 
         // echo 'Collection (' . count($products) .' elements) load time: ' . ($end1 - $start1);
