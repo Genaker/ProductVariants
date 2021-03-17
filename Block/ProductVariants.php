@@ -112,7 +112,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         foreach ($products as $pr) {
             //echo $pr . "--";
             if (!isset($foundSKUs[$pr])) {
-                unset($k);
+                unset($products[$k]);
                 echo "\n" . '<!-- SKU ' . $pr . ' not found check input data -->' . "\n";
             }
             $k++;
