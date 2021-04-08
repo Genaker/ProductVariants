@@ -214,7 +214,9 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             }
 
             $imageHelper = $this->objectManager->get('\Magento\Catalog\Helper\Image');
-            $imageURL = $imageHelper->init($obj, 'small_image')->getUrl();
+            $imageURL = $imageHelper->init($obj, 'product_base_image')->constrainOnly(true)
+                        ->resize(100, 100)
+                        ->getUrl();
 
             if (!strpos($imageURL, 'placeholder')) {
                 $swatch[$sku]['image'] = $imageURL;
