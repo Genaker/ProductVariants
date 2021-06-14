@@ -206,15 +206,19 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             // $variationProduct->getData('image'));
             // $variationProduct->getData('small_image'));
             // $variationProduct->getData('thumbnail'));
-            // $prodvariationProductuct->getData('swatch_image'));
-
-            $swatch[$sku]['image'] = $variationProduct->getData('swatch_image');
-            if (!$variationProduct->getData('swatch_image')) {
-                $swatch[$sku]['image'] = $variationProduct->getData('small_image');
-            }
-
+            // $prodvariationProductuct->getData('swatch_image'));]
+            
             $imageHelper = $this->objectManager->get('\Magento\Catalog\Helper\Image');
-            $imageURL = $imageHelper->init($obj, 'product_base_image')->constrainOnly(true)
+            
+            if ($variationProduct->getData('swatch_image')){
+                $swatchImageType = 'swatch_image';
+            } else if ($variationProduct->getData('small_image')) {
+                $swatchImageType = 'small_image';
+            } else {
+                $swatchImageType = 'product_base_image';
+            }
+           
+            $imageURL = $imageHelper->init($obj, $swatchImage)->constrainOnly(true)
                         ->resize(100, 100)
                         ->getUrl();
 
