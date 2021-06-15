@@ -218,7 +218,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
                 $swatchImageType = 'product_base_image';
             }
            
-            $imageURL = $imageHelper->init($obj, $swatchImage)->constrainOnly(true)
+            $imageURL = $imageHelper->init($obj, $swatchImageType)->constrainOnly(true)
                         ->resize(100, 100)
                         ->getUrl();
 
