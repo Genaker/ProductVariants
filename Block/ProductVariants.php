@@ -209,11 +209,11 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             // $prodvariationProductuct->getData('swatch_image'));]
             
             $imageHelper = $this->objectManager->get('\Magento\Catalog\Helper\Image');
-            
+
             if ($variationProduct->getData('swatch_image')){
-                $swatchImageType = 'swatch_image';
+                $swatchImageType = 'swatch_image_base';
             } else if ($variationProduct->getData('small_image')) {
-                $swatchImageType = 'small_image';
+                $swatchImageType = 'product_small_image';
             } else {
                 $swatchImageType = 'product_base_image';
             }
