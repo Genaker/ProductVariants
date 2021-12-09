@@ -117,6 +117,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
        ///die();
         //$productsObj = $this->productInst->getList($searchCriteria)->getItems();
         $end1 = microtime(true);
+        echo "<h1> TIME 0 " . ($end1 - $start1) . "</h1>";
 
         //Check missung SKUS
         $foundSKUs = [];
@@ -198,7 +199,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
 
             $attributeId = $swatch['data']['attribute_id'];
 
-            $label = $this->getProduct()->getResource()->getAttribute(key($attribute))->getStoreLabel();
+            $label = $variationProduct->getResource()->getAttribute(key($attribute))->getStoreLabel();
             $swatch['data']['label'] = $label;
 
             if (isset($swatch[$sku]["option_id"]) || !@$swatch[$sku]["option_id"]) {
@@ -223,7 +224,8 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             // $variationProduct->getData('small_image'));
             // $variationProduct->getData('thumbnail'));
             // $prodvariationProductuct->getData('swatch_image'));]
-            
+  
+
             $imageHelper = $this->objectManager->get('\Magento\Catalog\Helper\Image');
 
             if ($variationProduct->getData('swatch_image')){
@@ -233,10 +235,12 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             } else {
                 $swatchImageType = 'product_base_image';
             }
-           
+            
             $imageURL = $imageHelper->init($obj, $swatchImageType)->constrainOnly(true)
                         ->resize(100, 100)
                         ->getUrl();
+            
+            //echo 'Image load time: ' . ($end2 - $start2);
 
             if (!strpos($imageURL, 'placeholder')) {
                 $swatch[$sku]['image'] = $imageURL;
