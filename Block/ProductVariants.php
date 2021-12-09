@@ -30,7 +30,6 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
     protected $swatchCollection;
     protected $deploymentConfig;
     protected $searchCriteriaBuilder;
-    protected $productCollection;
 
     public function __construct(
         \Magento\Catalog\Block\Product\Context $context,
@@ -38,7 +37,6 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         \Magento\Catalog\Model\ProductRepository $productInst,
         \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
         \Magento\Swatches\Model\ResourceModel\Swatch\Collection $swatchCollection,
-        \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollection,
         \Magento\Framework\App\DeploymentConfig $deploymentConfig,
         \Magento\Framework\ObjectManagerInterface $objectManager,
         array $data = []
@@ -47,7 +45,6 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         $this->productInst = $productInst;
         $this->storeManager = $context->getStoreManager();
         $this->swatchCollection = $swatchCollection;
-        $this->productCollection = $productCollection;
         $this->deploymentConfig = $deploymentConfig;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         parent::__construct(
@@ -100,38 +97,31 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
 
         $searchCriteria = $this->searchCriteriaBuilder->addFilter('sku', $products, 'in')->create();
 
+        // Warm up the product Reposetorycache
+        $start1 = microtime(true);
+
         $attributesToSellect = ['entity_id','swatch_image', 'media_gallery',
-                                'small_image', 'name', 'status', 'sku', 
-                                'attribute_set_id', 'type_id', 'has_options', 
+                                'small_image', 'name', 'status', 'sku', 'color',
+                                'attribute_set_id', /*'type_id',*/ 'has_options', 
                                 'required_options', 'is_salable', 'color_variants', 
                                 'size_variants', 'spec_design', 'filtersize'];
         
-        $collection = $this->productCollection->create()
+        $productCollection = $this->objectManager->get('Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
+        $productsObj = $productCollection->create()
         ->addAttributeToSelect($attributesToSellect)
         ->addAttributeToFilter('status', array('eq' => 1))
         ->addAttributeToFilter('sku', array('in' => $products))
+        //var_dump($productsObj->getSelect()->__toString());
         ///->addStoreFilter()
-        ->load();
-
-        $productIdObj = [];
-        foreach($collection as $p){
-            $productIdObj[$p->getSku()] = $p;
-        }
-
-
-        $productsF = $this->getProductWithoutBrokenMagento($skus = $products, $attributesToSellect);
-        //echo "<pre>";
-        //var_dump($productsF);
-        //echo "</pre>";
-        // Warm up the product Reposetorycache
-        //$start1 = microtime(true);
-        $productsObj = $productsF; //$this->productInst->getList($searchCriteria)->getItems();
-        //$end1 = microtime(true);
+        ->load(); 
+       ///die();
+        //$productsObj = $this->productInst->getList($searchCriteria)->getItems();
+        $end1 = microtime(true);
 
         //Check missung SKUS
         $foundSKUs = [];
         foreach ($productsObj as $pr) {
-            $foundSKUs[$pr['sku']] = 1;
+            $foundSKUs[$pr->getsku()] = 1;
         }
 
         $k = 0;
@@ -147,7 +137,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         // echo 'Collection (' . count($products) .' elements) load time: ' . ($end1 - $start1);
 
         foreach ($productsObj as $obj) {
-            $sku = $obj['sku'];
+            $sku = $obj->getData('sku');
             if (!$sku || $sku === '') {
                 continue;
             }
@@ -164,11 +154,9 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             // echo "\n --> \n";
             $productVariantAttribute = $attribute[key($attribute)];
 
-            $optionValue = null;
             //basically any attribut not just collor it is option value
-            if (isset($variationProduct['attributes'][$productVariantAttribute])) {
-                $optionValue = $variationProduct['attributes'][$productVariantAttribute];
-            }
+            $optionValue = $variationProduct->getData($productVariantAttribute);
+
             if ($optionValue === null) {
                 continue;
             }
@@ -205,7 +193,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
 
             $swatchOptionIds[$optionValue] = $optionValue;
 
-            $swatch['data'] = $this->getProduct()->getResource()
+            $swatch['data'] = $variationProduct->getResource()
                 ->getAttribute($attribute[key($attribute)])->getData();
 
             $attributeId = $swatch['data']['attribute_id'];
@@ -217,10 +205,10 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
                 $swatch[$sku]["option_id"] = $optionValue;
             }
 
-            $swatch[$sku]['product_title'] = $variationProduct['attributes']['name'];
+            $swatch[$sku]['product_title'] = $variationProduct->getName();
 
-            $attr = $this->getProduct()->getResource()->getAttribute($swatch['data']['attribute_code']);
-            $swatch[$sku]['attribute_value'] = $this->getProduct()->getAttributeText($productVariantAttribute);
+            $attr = $variationProduct->getResource()->getAttribute($swatch['data']['attribute_code']);
+            $swatch[$sku]['attribute_value'] = $variationProduct->getAttributeText($productVariantAttribute);
 
             /*
             echo "<br> Attribute Text Value ";
@@ -235,41 +223,37 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             // $variationProduct->getData('small_image'));
             // $variationProduct->getData('thumbnail'));
             // $prodvariationProductuct->getData('swatch_image'));]
-            $swatchHelper = $this->objectManager->get("Magento\Swatches\Helper\Media"); 
-            $imageReader = $this->objectManager->get('Magento\Catalog\Model\Product\Gallery\ReadHandler');
-            $imageHelper = $this->objectManager->get('Magento\Catalog\Helper\Image');
-            //$imageReader->execute($variationProduct);
-            //$swatchImage = $swatchHelper->getSwatchAttributeImage('swatch_image', $variationProduct->getValue());
-            //$thumbImage =  $swatchHelper->getSwatchAttributeImage('swatch_thumb', $_product->getValue());
             
-            //$mediaGallery = $variationProduct->getMediaGalleryImages();
+            $imageHelper = $this->objectManager->get('\Magento\Catalog\Helper\Image');
 
-           // die();
-            //var_dump($mediaGallery->getData());
-
-            if ($variationProduct['attributes']['swatch_image']){
+            if ($variationProduct->getData('swatch_image')){
                 $swatchImageType = 'swatch_image_base';
-            } else if ($variationProduct['attributes']['small_image']) {
+            } else if ($variationProduct->getData('small_image')) {
                 $swatchImageType = 'product_small_image';
             } else {
                 $swatchImageType = 'product_base_image';
             }
-       
-            $productModel = $productIdObj[$variationProduct['sku']];
-            $imageURL = $imageHelper->init($productModel, $swatchImageType)->constrainOnly(true)
+           
+            $imageURL = $imageHelper->init($obj, $swatchImageType)->constrainOnly(true)
                         ->resize(100, 100)
                         ->getUrl();
 
-            //if (!strpos($imageURL, 'placeholder')) {
+            if (!strpos($imageURL, 'placeholder')) {
                 $swatch[$sku]['image'] = $imageURL;
-            //}
+            }
 
             $swatch[$sku]['option_text'] = $optionText;
-            $swatch[$sku]["product_url_key"] = $variationProduct['url_rewrites'];
+            $swatch[$sku]["product_url_key"] = $variationProduct->getProductUrl();
 
         }
 
-        $fromSql = $this->getSwatchesData($swatchOptionIds);
+        //var_dump($swatchOptionIds);
+        //die();
+        /*    
+        if ($this->isSwatch($productVariantAttribute)){
+            $fromSql = $this->getSwatchesData($swatchOptionIds);
+        }
+        */
 
         if (count($swatch) === 1 || $swatch === false) {
             return false;
@@ -417,85 +401,5 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
             $options[$option['option_id']] = $option;
         }
         return $options;
-    }
-
-    public function getProductWithoutBrokenMagento($skus, $attributes){
-        $timeS = microtime(true);
-        $db = new \Genaker\Laragento\DB();
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        /* Create a new product object */
-        //$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
-        /* Get a request object singleton */
-        $MagentoPDO = $objectManager->get(\Magento\Framework\App\ResourceConnection::class);
-
-        $PDO = $MagentoPDO->getConnection();
-        //var_dump($PDO);
-	    $connection = $db->connect()->getConnection();
-        $connection->enableQueryLog();
-        //Your block code 
-        echo "<pre>";
-
-        $selectAttributes = array_merge($attributes);
-        $EAVRows = ['entity_id', 'attribute_id','value', 'store_id'];
-
-        $attributesIdsCode = \Laragento\Models\EavAttribute::select('attribute_id','attribute_code')->whereIn('attribute_code', $selectAttributes)->whereIn('entity_type_id',[4])->get()->toArray();
-       
-        $attributesIds = [];
-        $attrToCode = [];
-        foreach($attributesIdsCode as $attr){
-            $attributesIds[] = $attr['attribute_id'];
-            $attrToCode[$attr['attribute_id']] = $attr['attribute_code'];
-        }
-
-        //var_dump($attributesIds); die();
-        $tableAttributes = [
-            'catalog_product_entity_varchars',
-            'catalog_product_entity_texts',
-            'catalog_product_entity_ints',
-            'catalog_product_entity_decimals',
-        ];
-
-        $products = \Laragento\Models\CatalogProductEntity::query()->whereIn('sku', $skus)
-                        ->with([
-                            'catalog_product_entity_varchars' => function ($q) use ($attributesIds,$EAVRows){$q->select($EAVRows)->whereIn(
-                                                            'attribute_id', $attributesIds
-                                                            )->whereIn('store_id', [0, 1]);},
-                            /*'catalog_product_entity_texts' => function ($q) use ($attributesIds,$EAVRows){$q->select($EAVRows)->whereIn(
-                                                            'attribute_id', $attributesIds
-                                                            )->whereIn('store_id', [0, 1]);}, */                               
-                            'url_rewrites' => function ($q) {$q->select(['entity_id', 'request_path', 'store_id'])->whereIn(
-                                'store_id', [0, 1]
-                                )->whereIn('entity_type',['product'])->whereNull('metadata');}
-                        ])->get()->toArray();
-
-        //var_dump($products);
-
-        foreach($products as $i => $product){
-            foreach ($tableAttributes as $attr){
-                if(isset($product[$attr])){
-                    foreach($product[$attr] as $a){
-                        $products[$i]['attributes'][$attrToCode[$a['attribute_id']]] = $a['value'];
-                    }
-                }
-                unset($products[$i][$attr]);
-            }
-
-            if(isset($product['url_rewrites'])) {
-                $products[$i]['url_rewrites'] = $product['url_rewrites'][0]['request_path'];
-                //unset($products[$i]['url_rewrites']);
-            }
-
-        }
-
-
-        //var_dump($products);
-       
-
-        $timeE = microtime(true);
-        //var_dump($connection->getQueryLog());
-        echo $timeE - $timeS;
-        echo "</pre>"; 
-
-        return $products;
     }
 }
