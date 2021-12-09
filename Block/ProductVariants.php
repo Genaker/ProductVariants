@@ -95,7 +95,7 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         $attributeId = null;
         $n = 1;
 
-        $searchCriteria = $this->searchCriteriaBuilder->addFilter('sku', $products, 'in')->create();
+        //$searchCriteria = $this->searchCriteriaBuilder->addFilter('sku', $products, 'in')->create();
 
         // Warm up the product Reposetorycache
         $start1 = microtime(true);
