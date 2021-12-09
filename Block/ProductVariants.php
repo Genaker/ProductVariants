@@ -98,12 +98,12 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         //$searchCriteria = $this->searchCriteriaBuilder->addFilter('sku', $products, 'in')->create();
 
         // Warm up the product Reposetorycache
-        $start1 = microtime(true);
+       // $start1 = microtime(true);
 
         $attributesToSellect = ['entity_id','swatch_image', 'media_gallery',
                                 'small_image', 'name', 'status', 'sku', 'color',
-                                'attribute_set_id', /*'type_id',*/ 'has_options', 
-                                'required_options', 'is_salable', 'color_variants', 
+                                /*'attribute_set_id', 'type_id',*/ 'has_options', 
+                                /*'required_options',*/ 'is_salable', 'color_variants', 
                                 'size_variants', 'spec_design', 'filtersize'];
         
         $productCollection = $this->objectManager->get('Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
@@ -116,8 +116,8 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         ->load(); 
        ///die();
         //$productsObj = $this->productInst->getList($searchCriteria)->getItems();
-        $end1 = microtime(true);
-        echo "<h1> TIME 0 " . ($end1 - $start1) . "</h1>";
+        //$end1 = microtime(true);
+        //echo "<h1> TIME 0 " . ($end1 - $start1) . "</h1>";
 
         //Check missung SKUS
         $foundSKUs = [];
