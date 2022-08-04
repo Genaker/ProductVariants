@@ -325,10 +325,11 @@ class ProductVariants extends \Magento\Catalog\Block\Product\View\AbstractView
         $currentProduct = $this->getProduct();
         $currentSku = $currentProduct->getSku();
         $variantIds = $currentProduct->getData($attribute);
-        $variantIds = trim(trim($variantIds, ','), '|');
+        
+        $variantIds = trim(trim(trim($variantIds, ','), '|'));
 
         if (strstr($variantIds, ',')) {
-            $products = explode(',', str_replace(' ', '', $variantIds));
+            $products = explode(',', str_replace(', ', ',', $variantIds));
         } else {
             $products = explode('|', $variantIds);
         }
